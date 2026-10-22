@@ -9,7 +9,7 @@ description = "MCP server that draws checked BPMN diagrams (SVG, PNG, Camunda .b
 license = {text = "MIT"}
 authors = [{name = "Huy (Harvey) Tran"}]
 requires-python = ">=3.10"
-dependencies = ["mcp>=1.2,<2"]
+dependencies = ["mcp>=1.2,<3"]
 
 [project.optional-dependencies]
 test = ["pytest>=8", "pytest-cov>=5", "tomli>=2; python_version < '3.11'"]
