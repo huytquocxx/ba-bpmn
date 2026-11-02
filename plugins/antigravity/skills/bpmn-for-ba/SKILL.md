@@ -22,13 +22,15 @@ check error), `bpmn_build` (lay out, check, write files).
    - If something stays unclear, draw it and put "TBC" in the subtitle; list the open questions after the picture.
    - Never invent a step to make the notation tidy. Ask instead.
 3. **Read `bpmn_spec_guide` once**, then write the spec.
-4. **Draft:** call `bpmn_build` with `stage="svg"` and `preview=true`. Fix every error it returns (each message
-   names the check; the guide lists the fix) and build again. Open the look PNG it lists and check it yourself:
-   the checks catch geometry, not meaning.
+4. **Draft:** call `bpmn_build` with `stage="svg"`, `preview=true` and `brief=` (the user's description, word for
+   word). Fix every error it returns (each message names the check; the guide lists the fix) and build again. Open
+   the look PNG it lists and check it yourself: the checks catch geometry, not meaning. Then follow "Review with
+   fresh eyes" below.
 5. **Show the user the picture** and ask for feedback. Do not export yet: each round of feedback would leave stale
    copies. Describe a big structural change (a new pool, a new branch) in chat and get a yes before redrawing.
 6. **After approval:** call `bpmn_build` with `stage="all"` and `preview=true`. It must report `imported, 0 warnings`
-   and no errors. Look at the Camunda preview PNG to see how Camunda will draw it.
+   and no errors. Show the user our picture and the Camunda preview PNG side by side, which is how Camunda will
+   draw the file, and say plainly if they differ.
 7. **Report:** what was checked and passed, the open questions and TBCs, and these two notes:
    - Camunda shows "One Process must be Executable" style messages. That is expected: the file is a documentation
      model, not a deployable process.
@@ -37,6 +39,26 @@ check error), `bpmn_build` (lay out, check, write files).
 
 `bpmn_build` saves the spec next to the outputs as `<name>.spec.json`, so the diagram can be rebuilt or changed
 later. To change an earlier diagram, read that file, edit it, and build again. Show the spec to the user on request.
+
+## Review with fresh eyes
+
+The checks prove the drawing is sound. They cannot tell that a step the user mentioned is missing. So before you
+show a draft, compare it with what the user said.
+
+1. **Keep the user's words.** Pass their description to `bpmn_build` as `brief=`, word for word, and add anything
+   they say later to the same text. It is saved as `<name>.brief.txt`. Never pass a summary: a summary can carry the
+   same mistake into the review.
+2. **Give the reviewer only two files:** `<name>.brief.txt` and `<name>.spec.json`. Not the chat, not your
+   reasoning. If your tool can start a sub-agent, use it. Otherwise do a deliberate second pass yourself: reread
+   those two files as if you had never seen the conversation.
+3. **The reviewer lists, in plain words:** steps or endings the user stated that are not drawn; steps or branches
+   drawn that the user never stated; decisions whose exits differ from what the user said; roles in the wrong lane.
+   Start and end events, and a step that only waits for or receives something the user described, are not
+   differences. If there is nothing, it says "no differences". It does not restyle, rename or redraw.
+4. **You act on the list.** Fix real differences in the spec and build again. If the user's words are unclear, ask
+   instead of guessing. Mention any fix in your message with the picture.
+
+Skip this for a tiny diagram (one lane, about five steps).
 
 ## Modelling rules
 

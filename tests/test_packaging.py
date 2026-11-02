@@ -53,6 +53,14 @@ def test_every_skill_the_main_skill_mentions_exists():
         assert tool in text
 
 
+def test_main_skill_has_the_fresh_eyes_review_and_shows_both_pictures():
+    text = (ROOT / "skills" / "bpmn-for-ba" / "SKILL.md").read_text(encoding="utf-8")
+    assert "## Review with fresh eyes" in text
+    assert "brief=" in text and ".brief.txt" in text, "the reviewer works from the saved words, not a summary"
+    assert "word for word" in text
+    assert "Camunda preview" in text and "side by side" in text
+
+
 def test_codex_plugin_folder_name_equals_manifest_name():
     manifest = load(CODEX / ".codex-plugin" / "plugin.json")
     assert CODEX.name == manifest["name"]            # Codex requires this

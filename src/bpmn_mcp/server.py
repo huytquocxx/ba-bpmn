@@ -18,6 +18,7 @@ mcp = FastMCP("bpmn")
 
 _GUIDE = Path(__file__).resolve().parent / "spec_format.md"
 _NAME = re.compile(r"^[A-Za-z0-9_-]{1,60}$")
+MAX_BRIEF = 20_000  # characters; the user's own description of the process, kept as plain text
 
 
 def _safe_out_dir(out_dir):
@@ -70,7 +71,7 @@ def bpmn_spec_guide() -> str:
 
 @mcp.tool()
 def bpmn_build(spec: dict, name: str = "diagram", out_dir: str = "bpmn-output",
-               stage: str = "svg", preview: bool = False) -> dict:
+               stage: str = "svg", preview: bool = False, brief: str = "") -> dict:
     """Lay out and check a diagram, and write the files.
 
     spec: the diagram as a JSON object (see bpmn_spec_guide).
@@ -79,6 +80,8 @@ def bpmn_build(spec: dict, name: str = "diagram", out_dir: str = "bpmn-output",
     stage: "svg" = checks plus SVG only (use while drafting); "all" = also PNG, .bpmn and the
            Camunda import check (use only after the user approved the drawing).
     preview: also write a look-at-it PNG (svg stage) or a Camunda preview (all stage).
+    brief: the user's own description of the process, word for word, saved as <name>.brief.txt so a
+           reviewer can compare the drawing with what the user said. Never a summary.
 
     Returns ok, errors (fix every one and build again), warnings, files (relative paths) and the log.
     """
@@ -86,6 +89,9 @@ def bpmn_build(spec: dict, name: str = "diagram", out_dir: str = "bpmn-output",
         return {"ok": False, "errors": ["stage must be 'svg' or 'all'"], "warnings": [], "files": [], "log": ""}
     if not _NAME.match(name):
         return {"ok": False, "errors": ["name may use only letters, digits, - and _ (max 60)"],
+                "warnings": [], "files": [], "log": ""}
+    if len(brief) > MAX_BRIEF:
+        return {"ok": False, "errors": [f"brief is too long (max {MAX_BRIEF} characters)"],
                 "warnings": [], "files": [], "log": ""}
     try:
         target, base = _safe_out_dir(out_dir)
@@ -96,6 +102,9 @@ def bpmn_build(spec: dict, name: str = "diagram", out_dir: str = "bpmn-output",
     target.mkdir(parents=True, exist_ok=True)
     spec_path = target / f"{name}.spec.json"  # kept so the diagram can be rebuilt or changed later
     spec_path.write_text(json.dumps(spec, indent=2, ensure_ascii=False), encoding="utf-8")
+    brief_path = target / f"{name}.brief.txt"
+    if brief:
+        brief_path.write_text(brief, encoding="utf-8", newline="")  # word for word, no newline rewriting
     preview_dir = target / "preview"
     if preview:
         preview_dir.mkdir(parents=True, exist_ok=True)  # the engine does not create it
@@ -111,6 +120,8 @@ def bpmn_build(spec: dict, name: str = "diagram", out_dir: str = "bpmn-output",
                                         "Close other Chrome or Edge windows and try again."],
                 "warnings": [], "files": [], "log": _relative(log.getvalue(), base)}
     files = [str(Path(f).resolve().relative_to(base)) for f in res["files"]] + [str(spec_path.relative_to(base))]
+    if brief:
+        files.append(str(brief_path.relative_to(base)))
     if preview:
         files += [str(p.relative_to(base)) for p in sorted(preview_dir.glob(f"{name}.*"))]
     return {"ok": not res["errors"], "errors": res["errors"], "warnings": res["warnings"],

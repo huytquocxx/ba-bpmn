@@ -31,6 +31,29 @@ def test_build_svg_writes_relative_files(tmp_path, monkeypatch):
     assert saved == EXAMPLE
 
 
+def test_brief_is_saved_word_for_word_next_to_the_outputs(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    brief = 'The employee asks for leave.\nIf the manager says "no", it goes back.  Ünïcode stays.'
+    res = server.bpmn_build(EXAMPLE, name="leave", stage="svg", brief=brief)
+    assert res["ok"], res
+    assert str(Path("bpmn-output") / "leave.brief.txt") in res["files"]
+    assert (tmp_path / "bpmn-output" / "leave.brief.txt").read_text(encoding="utf-8") == brief
+
+
+def test_no_brief_means_no_brief_file(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    res = server.bpmn_build(EXAMPLE, name="leave", stage="svg")
+    assert not any(f.endswith(".brief.txt") for f in res["files"])
+    assert not (tmp_path / "bpmn-output" / "leave.brief.txt").exists()
+
+
+def test_an_oversized_brief_is_rejected_before_anything_is_written(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    res = server.bpmn_build(EXAMPLE, name="leave", brief="x" * (server.MAX_BRIEF + 1))
+    assert not res["ok"] and "brief" in res["errors"][0]
+    assert not (tmp_path / "bpmn-output").exists()
+
+
 def test_log_has_no_absolute_paths(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     res = server.bpmn_build(EXAMPLE, name="leave", stage="svg")
